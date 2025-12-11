@@ -16,8 +16,8 @@
         <div class="nav-container">
             <a href="#" class="nav-logo">ImgConverter</a>
             <ul class="nav-menu">
-                <li><a href="#" class="nav-link active">画像変換</a></li>
-                <li><a href="#" class="nav-link">画像リサイズ</a></li>
+                <li><a href="#" class="nav-link active" data-target="converter-section">画像変換</a></li>
+                <li><a href="#" class="nav-link" data-target="resizer-section">画像リサイズ</a></li>
                 <li><a href="#" class="nav-link">音楽変換</a></li>
                 <li><a href="#" class="nav-link">動画変換</a></li>
             </ul>
@@ -30,59 +30,141 @@
     </div>
 
     <main class="container">
-        <header class="header">
-            <h1>Image Converter</h1>
-            <p>ブラウザだけで完結。安全・高速な画像変換ツール。</p>
-        </header>
+        <!-- Converter Section -->
+        <section id="converter-section" class="active-section">
+            <header class="header">
+                <h1>Image Converter</h1>
+                <p>ブラウザだけで完結。安全・高速な画像変換ツール。</p>
+            </header>
 
-        <div class="converter-card">
-            <div id="drop-zone" class="drop-zone">
-                <div class="drop-zone-content">
-                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        <path d="M9 11L12 8L15 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        <path d="M8 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-                    </svg>
-                    <p class="drop-text">ここに画像をドラッグ＆ドロップ</p>
-                    <p class="drop-subtext">複数ファイルのアップロードに対応</p>
-                    <button id="select-file-btn" class="btn secondary-btn">ファイルを選択</button>
-                    <input type="file" id="file-input" accept="image/*" multiple class="hidden">
-                </div>
-            </div>
-
-            <div id="editor-area" class="hidden">
-                <div class="file-list-header">
-                    <h3>選択された画像 <span id="file-count">(0)</span></h3>
-                    <button id="add-more-btn" class="btn text-btn small-btn">+ 追加</button>
-                </div>
-
-                <div id="file-list" class="file-list">
-                    <!-- File items will be injected here -->
-                </div>
-
-                <div class="controls">
-                    <div class="control-group">
-                        <label for="format-select">変換後の形式</label>
-                        <select id="format-select">
-                            <option value="image/png">PNG</option>
-                            <option value="image/jpeg">JPEG</option>
-                            <option value="image/webp">WEBP</option>
-                            <option value="image/bmp">BMP</option>
-                            <option value="application/pdf">PDF</option>
-                        </select>
-                    </div>
-
-                    <div class="actions">
-                        <button id="convert-btn" class="btn primary-btn">変換してダウンロード</button>
-                        <button id="reset-btn" class="btn text-btn">リセット</button>
+            <div class="converter-card">
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M9 11L12 8L15 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M8 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <p class="drop-text">ここに画像をドラッグ＆ドロップ</p>
+                        <p class="drop-subtext">複数ファイルのアップロードに対応</p>
+                        <button id="select-file-btn" class="btn secondary-btn">ファイルを選択</button>
+                        <input type="file" id="file-input" accept="image/*" multiple class="hidden">
                     </div>
                 </div>
+
+                <div id="editor-area" class="hidden">
+                    <div class="file-list-header">
+                        <h3>選択された画像 <span id="file-count">(0)</span></h3>
+                        <button id="add-more-btn" class="btn text-btn small-btn">+ 追加</button>
+                    </div>
+
+                    <div id="file-list" class="file-list">
+                        <!-- File items will be injected here -->
+                    </div>
+
+                    <div class="controls">
+                        <div class="control-group">
+                            <label for="format-select">変換後の形式</label>
+                            <select id="format-select">
+                                <option value="image/png">PNG</option>
+                                <option value="image/jpeg">JPEG</option>
+                                <option value="image/webp">WEBP</option>
+                                <option value="image/bmp">BMP</option>
+                                <option value="application/pdf">PDF</option>
+                            </select>
+                        </div>
+
+                        <div class="actions">
+                            <button id="convert-btn" class="btn primary-btn">変換してダウンロード</button>
+                            <button id="reset-btn" class="btn text-btn">リセット</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Resizer Section -->
+        <section id="resizer-section" class="hidden-section">
+            <header class="header">
+                <h1>Image Resizer</h1>
+                <p>簡単操作で画像をリサイズ。アスペクト比固定も可能。</p>
+            </header>
+
+            <div class="converter-card">
+                <div id="resize-drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p class="drop-text">リサイズする画像をアップロード</p>
+                        <p class="drop-subtext">複数ファイルのアップロードに対応</p>
+                        <button id="resize-select-file-btn" class="btn secondary-btn">ファイルを選択</button>
+                        <input type="file" id="resize-file-input" accept="image/*" multiple class="hidden">
+                    </div>
+                </div>
+
+                <div id="resize-editor-area" class="hidden">
+                    <div class="file-list-header">
+                        <h3>選択された画像 <span id="resize-file-count">(0)</span></h3>
+                        <button id="resize-add-more-btn" class="btn text-btn small-btn">+ 追加</button>
+                    </div>
+
+                    <div id="resize-file-list" class="file-list">
+                        <!-- File items will be injected here -->
+                    </div>
+
+                    <div class="controls resize-controls">
+                        <div class="resize-mode-tabs">
+                            <button class="mode-tab active" data-mode="pixel">ピクセル指定</button>
+                            <button class="mode-tab" data-mode="percentage">パーセンテージ指定</button>
+                        </div>
+
+                        <!-- Pixel Inputs -->
+                        <div id="pixel-inputs" class="inputs-container">
+                            <div class="input-row">
+                                <div class="control-group half">
+                                    <label for="resize-width">幅 (px)</label>
+                                    <input type="number" id="resize-width" class="input-field" min="1"
+                                        placeholder="例: 800">
+                                </div>
+                                <div class="control-group half">
+                                    <label for="resize-height">高さ (px)</label>
+                                    <input type="number" id="resize-height" class="input-field" min="1"
+                                        placeholder="例: 600">
+                                </div>
+                            </div>
+                            <div class="control-group full checkbox-group">
+                                <input type="checkbox" id="lock-aspect-ratio" checked>
+                                <label for="lock-aspect-ratio">アスペクト比を固定</label>
+                            </div>
+                        </div>
+
+                        <!-- Percentage Inputs -->
+                        <div id="percentage-inputs" class="inputs-container hidden">
+                            <div class="control-group full">
+                                <label for="resize-percentage">縮小・拡大率 (%)</label>
+                                <input type="number" id="resize-percentage" class="input-field" min="1" max="500"
+                                    value="50">
+                                <div class="slider-container">
+                                    <input type="range" id="resize-percentage-slider" min="1" max="200" value="50"
+                                        class="slider">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button id="do-resize-btn" class="btn primary-btn">リサイズしてダウンロード</button>
+                            <button id="resize-reset-btn" class="btn text-btn">リセット</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
     <!-- JSZip Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
