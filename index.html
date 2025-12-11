@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="background-blobs">
         <div class="blob blob-1"></div>
@@ -26,21 +28,29 @@
             <div id="drop-zone" class="drop-zone">
                 <div class="drop-zone-content">
                     <svg class="upload-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M9 11L12 8L15 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M8 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M9 11L12 8L15 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M8 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
                     </svg>
                     <p class="drop-text">ここに画像をドラッグ＆ドロップ</p>
-                    <p class="drop-subtext">または</p>
+                    <p class="drop-subtext">複数ファイルのアップロードに対応</p>
                     <button id="select-file-btn" class="btn secondary-btn">ファイルを選択</button>
-                    <input type="file" id="file-input" accept="image/*" class="hidden">
+                    <input type="file" id="file-input" accept="image/*" multiple class="hidden">
                 </div>
             </div>
 
             <div id="editor-area" class="hidden">
-                <div class="preview-container">
-                    <img id="image-preview" src="" alt="Preview">
+                <div class="file-list-header">
+                    <h3>選択された画像 <span id="file-count">(0)</span></h3>
+                    <button id="add-more-btn" class="btn text-btn small-btn">+ 追加</button>
+                </div>
+
+                <div id="file-list" class="file-list">
+                    <!-- File items will be injected here -->
                 </div>
 
                 <div class="controls">
@@ -54,13 +64,16 @@
                     </div>
 
                     <div class="actions">
-                        <button id="convert-btn" class="btn primary-btn">変換してダウンロード</button>
+                        <button id="convert-btn" class="btn primary-btn">一括変換してZIPでダウンロード</button>
                         <button id="reset-btn" class="btn text-btn">リセット</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+    <!-- JSZip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

@@ -3,14 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const selectFileBtn = document.getElementById('select-file-btn');
+    const addMoreBtn = document.getElementById('add-more-btn');
     const editorArea = document.getElementById('editor-area');
-    const imagePreview = document.getElementById('image-preview');
+    const fileListContainer = document.getElementById('file-list');
+    const fileCountSpan = document.getElementById('file-count');
     const formatSelect = document.getElementById('format-select');
     const convertBtn = document.getElementById('convert-btn');
     const resetBtn = document.getElementById('reset-btn');
 
-    let originalImage = null;
-    let originalFileName = '';
+    // State
+    let fileQueue = [];
 
     // Event Listeners for Drag & Drop
     dropZone.addEventListener('dragover', (e) => {
@@ -25,48 +27,96 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
-        
         if (e.dataTransfer.files.length > 0) {
-            handleFile(e.dataTransfer.files[0]);
+            handleFiles(e.dataTransfer.files);
         }
     });
 
     // File Input Events
-    selectFileBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+    addMoreBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
-            handleFile(e.target.files[0]);
+            handleFiles(e.target.files);
         }
+        // Reset input to allow selecting same file again
+        fileInput.value = '';
     });
 
     // Reset Event
     resetBtn.addEventListener('click', resetUI);
 
     // Convert Event
-    convertBtn.addEventListener('click', convertImage);
+    convertBtn.addEventListener('click', convertAndDownload);
 
     // Functions
-    function handleFile(file) {
-        if (!file.type.startsWith('image/')) {
+    function handleFiles(files) {
+        const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+
+        if (newFiles.length === 0) {
             alert('画像ファイルを選択してください。');
             return;
         }
 
-        originalFileName = file.name.split('.')[0]; 
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            originalImage = new Image();
-            originalImage.onload = () => {
-                showEditor();
+        newFiles.forEach(file => {
+            // Read file for preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fileObj = {
+                    id: Date.now() + Math.random(),
+                    file: file,
+                    preview: e.target.result,
+                    name: file.name
+                };
+                fileQueue.push(fileObj);
+                renderFileList();
             };
-            originalImage.src = e.target.result;
-            imagePreview.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
+        });
+
+        showEditor();
+    }
+
+    function renderFileList() {
+        fileListContainer.innerHTML = '';
+        fileCountSpan.textContent = `(${fileQueue.length})`;
+
+        fileQueue.forEach(item => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+
+            const img = document.createElement('img');
+            img.src = item.preview;
+            img.className = 'file-preview';
+
+            const name = document.createElement('div');
+            name.className = 'file-name';
+            name.textContent = item.name;
+            name.title = item.name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-file-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.title = '削除';
+            removeBtn.onclick = () => removeFile(item.id);
+
+            fileItem.appendChild(img);
+            fileItem.appendChild(name);
+            fileItem.appendChild(removeBtn);
+
+            fileListContainer.appendChild(fileItem);
+        });
+
+        // Hide editor if queue is empty
+        if (fileQueue.length === 0) {
+            resetUI();
+        }
+    }
+
+    function removeFile(id) {
+        fileQueue = fileQueue.filter(item => item.id !== id);
+        renderFileList();
     }
 
     function showEditor() {
@@ -75,54 +125,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetUI() {
-        fileInput.value = '';
-        originalImage = null;
-        originalFileName = '';
-        imagePreview.src = '';
-        
+        fileQueue = [];
+        fileListContainer.innerHTML = '';
+        fileCountSpan.textContent = '(0)';
+
         editorArea.classList.add('hidden');
         dropZone.classList.remove('hidden');
     }
 
-    function convertImage() {
-        if (!originalImage) return;
+    async function convertAndDownload() {
+        if (fileQueue.length === 0) return;
 
         const format = formatSelect.value;
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const extension = format.split('/')[1]; // png, jpeg, webp
+        const zip = new JSZip();
 
-        // Set canvas dimensions to match image
-        canvas.width = originalImage.naturalWidth;
-        canvas.height = originalImage.naturalHeight;
+        // Show loading state
+        const originalBtnText = convertBtn.textContent;
+        convertBtn.textContent = '変換中...';
+        convertBtn.disabled = true;
 
-        // Draw image
-        // Check if format is JPEG to add white background (prevent black transparency)
-        if (format === 'image/jpeg') {
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        try {
+            const conversionPromises = fileQueue.map(item => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
 
-        ctx.drawImage(originalImage, 0, 0);
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
 
-        // Convert and Download
-        canvas.toBlob((blob) => {
-            if (!blob) {
-                alert('変換に失敗しました。');
-                return;
-            }
+                        // Add white background for JPEG
+                        if (format === 'image/jpeg') {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
 
-            const url = URL.createObjectURL(blob);
+                        ctx.drawImage(img, 0, 0);
+
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                // Create filename for ZIP entry
+                                const nameWithoutExt = item.name.substring(0, item.name.lastIndexOf('.')) || item.name;
+                                resolve({
+                                    name: `${nameWithoutExt}.${extension}`,
+                                    blob: blob
+                                });
+                            } else {
+                                reject('Conversion failed');
+                            }
+                        }, format, 0.9);
+                    };
+                    img.onerror = reject;
+                    img.src = item.preview;
+                });
+            });
+
+            const results = await Promise.all(conversionPromises);
+
+            // Add files to ZIP
+            results.forEach(result => {
+                zip.file(result.name, result.blob);
+            });
+
+            // Generate ZIP
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+            // Download
+            const url = URL.createObjectURL(zipBlob);
             const a = document.createElement('a');
-            const extension = format.split('/')[1];
-            
             a.href = url;
-            a.download = `${originalFileName}_converted.${extension}`;
+            a.download = 'images_converted.zip';
             document.body.appendChild(a);
             a.click();
-            
-            // Cleanup
+
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }, format, 0.9); // Quality 0.9 for JPEG/WEBP
+
+        } catch (error) {
+            console.error(error);
+            alert('変換中にエラーが発生しました。');
+        } finally {
+            convertBtn.textContent = originalBtnText;
+            convertBtn.disabled = false;
+        }
     }
 });
