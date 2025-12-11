@@ -60,11 +60,13 @@
                             <option value="image/png">PNG</option>
                             <option value="image/jpeg">JPEG</option>
                             <option value="image/webp">WEBP</option>
+                            <option value="image/bmp">BMP</option>
+                            <option value="application/pdf">PDF</option>
                         </select>
                     </div>
 
                     <div class="actions">
-                        <button id="convert-btn" class="btn primary-btn">一括変換してZIPでダウンロード</button>
+                        <button id="convert-btn" class="btn primary-btn">変換してダウンロード</button>
                         <button id="reset-btn" class="btn text-btn">リセット</button>
                     </div>
                 </div>
@@ -73,6 +75,8 @@
     </main>
     <!-- JSZip Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js"></script>
 </body>
 
