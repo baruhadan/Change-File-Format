@@ -3,23 +3,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const sections = document.querySelectorAll('section');
 
+    function switchView(targetId) {
+        // Validation: Ensure targetId exists
+        const targetSection = document.getElementById(targetId);
+        if (!targetSection) return;
+
+        // Update Active Link
+        navLinks.forEach(link => {
+            const linkTarget = link.getAttribute('data-target');
+            if (linkTarget === targetId) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        // Switch Section
+        sections.forEach(section => {
+            section.classList.remove('active-section');
+            if (section.id === targetId) {
+                section.classList.add('active-section');
+            }
+        });
+    }
+
+    function handleHashChange() {
+        const hash = window.location.hash.substring(1); // Remove '#'
+        if (hash) {
+            switchView(hash);
+        } else {
+            // Default view
+            switchView('converter-section');
+        }
+    }
+
+    // Event Listeners
+    window.addEventListener('hashchange', handleHashChange);
+
+    // Initial Load
+    handleHashChange();
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault();
             const targetId = link.getAttribute('data-target');
-            if (!targetId) return; // For placeholder links
-
-            // Update Active Link
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-
-            // Switch Section
-            sections.forEach(section => {
-                section.classList.remove('active-section');
-                if (section.id === targetId) {
-                    section.classList.add('active-section');
-                }
-            });
+            // If it's a real link with data-target, update hash
+            if (targetId) {
+                e.preventDefault();
+                window.location.hash = targetId;
+            }
+            // For placeholder links without data-target, default behavior (href="#") or preventDefault
         });
     });
 
