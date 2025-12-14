@@ -19,7 +19,7 @@
                 <li><a href="#" class="nav-link active" data-target="converter-section">画像変換</a></li>
                 <li><a href="#" class="nav-link" data-target="resizer-section">画像リサイズ</a></li>
                 <li><a href="#" class="nav-link" data-target="audio-converter-section">音楽変換</a></li>
-                <li><a href="#" class="nav-link">動画変換</a></li>
+                <li><a href="#" class="nav-link" data-target="video-converter-section">動画変換</a></li>
             </ul>
         </div>
     </nav>
@@ -219,6 +219,61 @@
                         <div class="actions">
                             <button id="audio-convert-btn" class="btn primary-btn">変換してダウンロード</button>
                             <button id="audio-reset-btn" class="btn text-btn">リセット</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Video Converter Section -->
+        <section id="video-converter-section" class="hidden-section">
+            <header class="header">
+                <h1>Video Converter</h1>
+                <p>動画ファイルのフォーマット変換。</p>
+            </header>
+
+            <div class="converter-card">
+                <div id="video-drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15 10l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M4 4v16h16V4H4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <p class="drop-text">ここに動画ファイルをドラッグ＆ドロップ</p>
+                        <p class="drop-subtext">複数ファイルのアップロードに対応</p>
+                        <button id="video-select-file-btn" class="btn secondary-btn">ファイルを選択</button>
+                        <input type="file" id="video-file-input" accept="video/*" multiple class="hidden">
+                    </div>
+                </div>
+
+                <div id="video-editor-area" class="hidden">
+                    <div class="file-list-header">
+                        <h3>選択されたファイル <span id="video-file-count">(0)</span></h3>
+                        <button id="video-add-more-btn" class="btn text-btn small-btn">+ 追加</button>
+                    </div>
+
+                    <div id="video-file-list" class="file-list">
+                        <!-- File items will be injected here -->
+                    </div>
+
+                    <div class="controls">
+                        <div class="control-group">
+                            <label for="video-format-select">変換後の形式</label>
+                            <select id="video-format-select">
+                                <option value="mp4">MP4</option>
+                                <option value="webm">WEBM</option>
+                                <option value="avi">AVI</option>
+                                <option value="mov">MOV</option>
+                                <option value="mkv">MKV</option>
+                                <option value="gif">GIF</option>
+                            </select>
+                        </div>
+
+                        <div class="actions">
+                            <button id="video-convert-btn" class="btn primary-btn">変換してダウンロード</button>
+                            <button id="video-reset-btn" class="btn text-btn">リセット</button>
                         </div>
                     </div>
                 </div>

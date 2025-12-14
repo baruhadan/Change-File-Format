@@ -859,4 +859,210 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
     }
+
+    // --- Video Converter Logic ---
+    const videoDropZone = document.getElementById('video-drop-zone');
+    const videoFileInput = document.getElementById('video-file-input');
+    const videoSelectFileBtn = document.getElementById('video-select-file-btn');
+    const videoAddMoreBtn = document.getElementById('video-add-more-btn');
+    const videoEditorArea = document.getElementById('video-editor-area');
+    const videoFileListContainer = document.getElementById('video-file-list');
+    const videoFileCountSpan = document.getElementById('video-file-count');
+    const videoFormatSelect = document.getElementById('video-format-select');
+    const videoConvertBtn = document.getElementById('video-convert-btn');
+    const videoResetBtn = document.getElementById('video-reset-btn');
+
+    let videoQueue = [];
+
+    // Drag & Drop
+    setupDragAndDrop(videoDropZone, (files) => handleVideoFiles(files));
+
+    // File Input
+    videoSelectFileBtn.addEventListener('click', () => videoFileInput.click());
+    videoAddMoreBtn.addEventListener('click', () => videoFileInput.click());
+
+    videoFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleVideoFiles(e.target.files);
+        videoFileInput.value = '';
+    });
+
+    // Reset
+    videoResetBtn.addEventListener('click', resetVideoUI);
+
+    // Convert
+    videoConvertBtn.addEventListener('click', convertVideoAndDownload);
+
+    function handleVideoFiles(files) {
+        const newFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
+
+        if (newFiles.length === 0) {
+            alert('動画ファイルを選択してください。');
+            return;
+        }
+
+        newFiles.forEach(file => {
+            videoQueue.push({
+                id: Date.now() + Math.random(),
+                file: file,
+                name: file.name,
+                status: 'pending'
+            });
+        });
+
+        renderVideoFileList();
+        showVideoEditor();
+    }
+
+    function renderVideoFileList() {
+        videoFileListContainer.innerHTML = '';
+        videoFileCountSpan.textContent = `(${videoQueue.length})`;
+
+        videoQueue.forEach(item => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'file-preview';
+            iconDiv.style.display = 'flex';
+            iconDiv.style.alignItems = 'center';
+            iconDiv.style.justifyContent = 'center';
+            iconDiv.style.backgroundColor = '#f1f5f9';
+            iconDiv.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l5 5-5 5"/><path d="M4 4v16h16V4H4z"/></svg>';
+
+            const name = document.createElement('div');
+            name.className = 'file-name';
+            name.textContent = item.name;
+            name.title = item.name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-file-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = () => removeVideoFile(item.id);
+
+            fileItem.appendChild(iconDiv);
+            fileItem.appendChild(name);
+            fileItem.appendChild(removeBtn);
+
+            videoFileListContainer.appendChild(fileItem);
+        });
+
+        updateVideoConvertButtonText();
+
+        if (videoQueue.length === 0) {
+            resetVideoUI();
+        }
+    }
+
+    function updateVideoConvertButtonText() {
+        if (videoQueue.length > 1) {
+            videoConvertBtn.textContent = '一括変換してZIPでダウンロード';
+        } else {
+            videoConvertBtn.textContent = '変換してダウンロード';
+        }
+    }
+
+    function removeVideoFile(id) {
+        videoQueue = videoQueue.filter(item => item.id !== id);
+        renderVideoFileList();
+    }
+
+    function showVideoEditor() {
+        videoDropZone.classList.add('hidden');
+        videoEditorArea.classList.remove('hidden');
+    }
+
+    function resetVideoUI() {
+        videoQueue = [];
+        videoFileListContainer.innerHTML = '';
+        videoFileCountSpan.textContent = '(0)';
+        updateVideoConvertButtonText();
+        videoEditorArea.classList.add('hidden');
+        videoDropZone.classList.remove('hidden');
+    }
+
+    async function convertVideoAndDownload() {
+        if (videoQueue.length === 0) return;
+
+        const format = videoFormatSelect.value;
+        const btnOriginalText = videoConvertBtn.textContent;
+        videoConvertBtn.textContent = '初期化中...';
+        videoConvertBtn.disabled = true;
+
+        try {
+            if (!ffmpeg) {
+                await loadFFmpeg();
+            }
+
+            videoConvertBtn.textContent = '変換中 (時間がかかります)...';
+
+            const results = [];
+
+            for (const item of videoQueue) {
+                if (!ffmpeg || !ffmpeg.isLoaded()) {
+                    await loadFFmpeg();
+                }
+
+                const result = await processVideoItem(item, format);
+                results.push(result);
+
+                try {
+                    ffmpeg.exit();
+                } catch (e) { }
+                ffmpeg = null;
+            }
+
+            if (results.length === 1) {
+                downloadBlob(results[0].blob, results[0].name);
+            } else {
+                const zip = new JSZip();
+                results.forEach(result => {
+                    zip.file(result.name, result.blob);
+                });
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                downloadBlob(zipBlob, 'videos_converted.zip');
+            }
+
+        } catch (error) {
+            console.error(error);
+            if (ffmpeg && !ffmpeg.isLoaded()) {
+                ffmpeg = null;
+            }
+            alert('変換中にエラーが発生しました。コンソールログを確認してください。\n' + error.message);
+        } finally {
+            videoConvertBtn.textContent = btnOriginalText;
+            videoConvertBtn.disabled = false;
+        }
+    }
+
+    async function processVideoItem(item, format) {
+        const { fetchFile } = FFmpeg;
+        const name = item.name;
+
+        const ext = name.split('.').pop();
+        const safeInputName = `input.${ext}`;
+        const outputName = `output.${format}`;
+
+        ffmpeg.FS('writeFile', safeInputName, await fetchFile(item.file));
+
+        // For GIF, we might want custom flags, but keeping it simple for now
+        await ffmpeg.run('-i', safeInputName, outputName);
+
+        const data = ffmpeg.FS('readFile', outputName);
+
+        try {
+            ffmpeg.FS('unlink', safeInputName);
+            ffmpeg.FS('unlink', outputName);
+        } catch (e) { }
+
+        let mimeType = `video/${format}`;
+        if (format === 'gif') mimeType = 'image/gif';
+
+        const blob = new Blob([data.buffer], { type: mimeType });
+        const nameWithoutExt = name.substring(0, name.lastIndexOf('.')) || name;
+
+        return {
+            name: `${nameWithoutExt}.${format}`,
+            blob: blob
+        };
+    }
 });
