@@ -636,4 +636,227 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+    // --- Audio Converter Logic ---
+    const audioDropZone = document.getElementById('audio-drop-zone');
+    const audioFileInput = document.getElementById('audio-file-input');
+    const audioSelectFileBtn = document.getElementById('audio-select-file-btn');
+    const audioAddMoreBtn = document.getElementById('audio-add-more-btn');
+    const audioEditorArea = document.getElementById('audio-editor-area');
+    const audioFileListContainer = document.getElementById('audio-file-list');
+    const audioFileCountSpan = document.getElementById('audio-file-count');
+    const audioFormatSelect = document.getElementById('audio-format-select');
+    const audioConvertBtn = document.getElementById('audio-convert-btn');
+    const audioResetBtn = document.getElementById('audio-reset-btn');
+
+    let audioQueue = [];
+    let ffmpeg = null;
+
+    // Load FFmpeg
+    async function loadFFmpeg() {
+        if (ffmpeg && ffmpeg.isLoaded()) return;
+
+        if (!ffmpeg) {
+            const { createFFmpeg } = FFmpeg;
+            ffmpeg = createFFmpeg({
+                log: true,
+                corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+                mainName: 'main'
+            });
+        }
+
+        if (!ffmpeg.isLoaded()) {
+            await ffmpeg.load();
+        }
+    }
+
+    // Drag & Drop
+    setupDragAndDrop(audioDropZone, (files) => handleAudioFiles(files));
+
+    // File Input
+    audioSelectFileBtn.addEventListener('click', () => audioFileInput.click());
+    audioAddMoreBtn.addEventListener('click', () => audioFileInput.click());
+
+    audioFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleAudioFiles(e.target.files);
+        audioFileInput.value = '';
+    });
+
+    // Reset
+    audioResetBtn.addEventListener('click', resetAudioUI);
+
+    // Convert
+    audioConvertBtn.addEventListener('click', convertAudioAndDownload);
+
+    function handleAudioFiles(files) {
+        const newFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+
+        if (newFiles.length === 0) {
+            alert('音声ファイルを選択してください。');
+            return;
+        }
+
+        newFiles.forEach(file => {
+            audioQueue.push({
+                id: Date.now() + Math.random(),
+                file: file,
+                name: file.name,
+                status: 'pending'
+            });
+        });
+
+        renderAudioFileList();
+        showAudioEditor();
+    }
+
+    function renderAudioFileList() {
+        audioFileListContainer.innerHTML = '';
+        audioFileCountSpan.textContent = `(${audioQueue.length})`;
+
+        audioQueue.forEach(item => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'file-preview';
+            iconDiv.style.display = 'flex';
+            iconDiv.style.alignItems = 'center';
+            iconDiv.style.justifyContent = 'center';
+            iconDiv.style.backgroundColor = '#f1f5f9';
+            iconDiv.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+
+            const name = document.createElement('div');
+            name.className = 'file-name';
+            name.textContent = item.name;
+            name.title = item.name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-file-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = () => removeAudioFile(item.id);
+
+            fileItem.appendChild(iconDiv);
+            fileItem.appendChild(name);
+            fileItem.appendChild(removeBtn);
+
+            audioFileListContainer.appendChild(fileItem);
+        });
+
+        updateAudioConvertButtonText();
+
+        if (audioQueue.length === 0) {
+            resetAudioUI();
+        }
+    }
+
+    function updateAudioConvertButtonText() {
+        if (audioQueue.length > 1) {
+            audioConvertBtn.textContent = '一括変換してZIPでダウンロード';
+        } else {
+            audioConvertBtn.textContent = '変換してダウンロード';
+        }
+    }
+
+    function removeAudioFile(id) {
+        audioQueue = audioQueue.filter(item => item.id !== id);
+        renderAudioFileList();
+    }
+
+    function showAudioEditor() {
+        audioDropZone.classList.add('hidden');
+        audioEditorArea.classList.remove('hidden');
+    }
+
+    function resetAudioUI() {
+        audioQueue = [];
+        audioFileListContainer.innerHTML = '';
+        audioFileCountSpan.textContent = '(0)';
+        updateAudioConvertButtonText();
+        audioEditorArea.classList.add('hidden');
+        audioDropZone.classList.remove('hidden');
+    }
+
+    async function convertAudioAndDownload() {
+        if (audioQueue.length === 0) return;
+
+        const format = audioFormatSelect.value;
+        const btnOriginalText = audioConvertBtn.textContent;
+        audioConvertBtn.textContent = 'FFmpeg準備中...';
+        audioConvertBtn.disabled = true;
+
+        try {
+            if (!ffmpeg) {
+                await loadFFmpeg();
+            }
+
+            audioConvertBtn.textContent = '変換中...';
+
+            const results = [];
+
+            for (const item of audioQueue) {
+                if (!ffmpeg || !ffmpeg.isLoaded()) {
+                    await loadFFmpeg();
+                }
+
+                const result = await processAudioItem(item, format);
+                results.push(result);
+
+                // Single-threaded FFmpeg workaround: reset instance after use
+                try {
+                    ffmpeg.exit();
+                } catch (e) { }
+                ffmpeg = null;
+            }
+
+            if (results.length === 1) {
+                downloadBlob(results[0].blob, results[0].name);
+            } else {
+                const zip = new JSZip();
+                results.forEach(result => {
+                    zip.file(result.name, result.blob);
+                });
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                downloadBlob(zipBlob, 'audio_converted.zip');
+            }
+
+        } catch (error) {
+            console.error(error);
+            // If load failed or any other error occurred, reset ffmpeg instance if it's not loaded correctly
+            if (ffmpeg && !ffmpeg.isLoaded()) {
+                ffmpeg = null;
+            }
+            alert('変換中にエラーが発生しました。コンソールログを確認してください。\n' + error.message);
+        } finally {
+            audioConvertBtn.textContent = btnOriginalText;
+            audioConvertBtn.disabled = false;
+        }
+    }
+
+    async function processAudioItem(item, format) {
+        const { fetchFile } = FFmpeg;
+        const name = item.name;
+
+        const ext = name.split('.').pop();
+        const safeInputName = `input.${ext}`;
+        const outputName = `output.${format}`;
+
+        ffmpeg.FS('writeFile', safeInputName, await fetchFile(item.file));
+
+        await ffmpeg.run('-i', safeInputName, outputName);
+
+        const data = ffmpeg.FS('readFile', outputName);
+
+        try {
+            ffmpeg.FS('unlink', safeInputName);
+            ffmpeg.FS('unlink', outputName);
+        } catch (e) { }
+
+        const blob = new Blob([data.buffer], { type: `audio/${format}` });
+        const nameWithoutExt = name.substring(0, name.lastIndexOf('.')) || name;
+
+        return {
+            name: `${nameWithoutExt}.${format}`,
+            blob: blob
+        };
+
+    }
 });

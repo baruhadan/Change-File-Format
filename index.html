@@ -18,7 +18,7 @@
             <ul class="nav-menu">
                 <li><a href="#" class="nav-link active" data-target="converter-section">画像変換</a></li>
                 <li><a href="#" class="nav-link" data-target="resizer-section">画像リサイズ</a></li>
-                <li><a href="#" class="nav-link">音楽変換</a></li>
+                <li><a href="#" class="nav-link" data-target="audio-converter-section">音楽変換</a></li>
                 <li><a href="#" class="nav-link">動画変換</a></li>
             </ul>
         </div>
@@ -170,9 +170,65 @@
                 </div>
             </div>
         </section>
+
+        <!-- Audio Converter Section -->
+        <section id="audio-converter-section" class="hidden-section">
+            <header class="header">
+                <h1>Audio Converter</h1>
+                <p>音声ファイルのフォーマットを簡単に変換。</p>
+            </header>
+
+            <div class="converter-card">
+                <div id="audio-drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="2" />
+                            <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <p class="drop-text">ここに音楽ファイルをドラッグ＆ドロップ</p>
+                        <p class="drop-subtext">複数ファイルのアップロードに対応</p>
+                        <button id="audio-select-file-btn" class="btn secondary-btn">ファイルを選択</button>
+                        <input type="file" id="audio-file-input" accept="audio/*" multiple class="hidden">
+                    </div>
+                </div>
+
+                <div id="audio-editor-area" class="hidden">
+                    <div class="file-list-header">
+                        <h3>選択されたファイル <span id="audio-file-count">(0)</span></h3>
+                        <button id="audio-add-more-btn" class="btn text-btn small-btn">+ 追加</button>
+                    </div>
+
+                    <div id="audio-file-list" class="file-list">
+                        <!-- File items will be injected here -->
+                    </div>
+
+                    <div class="controls">
+                        <div class="control-group">
+                            <label for="audio-format-select">変換後の形式</label>
+                            <select id="audio-format-select">
+                                <option value="mp3">MP3</option>
+                                <option value="wav">WAV</option>
+                                <option value="ogg">OGG</option>
+                                <option value="aac">AAC</option>
+                                <option value="m4a">M4A</option>
+                            </select>
+                        </div>
+
+                        <div class="actions">
+                            <button id="audio-convert-btn" class="btn primary-btn">変換してダウンロード</button>
+                            <button id="audio-reset-btn" class="btn text-btn">リセット</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
     <!-- JSZip Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FFmpeg.wasm (v0.11.x) -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
     <!-- jsPDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js"></script>
