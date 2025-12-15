@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Format Converter - Simple & Privacy Focused</title>
+    <title>File Format Converter - Simple & Privacy Focused</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="#" class="nav-logo">ImgConverter</a>
+            <a href="#" class="nav-logo">Format Converter</a>
             <ul class="nav-menu">
                 <li><a href="#" class="nav-link active" data-target="converter-section">画像変換</a></li>
                 <li><a href="#" class="nav-link" data-target="resizer-section">画像リサイズ</a></li>
@@ -269,6 +269,17 @@
                                 <option value="mkv">MKV</option>
                                 <option value="gif">GIF</option>
                             </select>
+                        </div>
+
+                        <!-- Progress Bar Container -->
+                        <div id="video-progress-container" class="progress-container hidden">
+                            <div class="progress-info">
+                                <span id="video-progress-text">変換中... 0%</span>
+                                <span id="video-file-progress">1/1</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div id="video-progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+                            </div>
                         </div>
 
                         <div class="actions">

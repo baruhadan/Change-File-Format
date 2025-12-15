@@ -3,75 +3,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const sections = document.querySelectorAll('section');
 
-    function switchView(targetId) {
-        // Validation: Ensure targetId exists
-        const targetSection = document.getElementById(targetId);
-        if (!targetSection) return;
+    function switchSection(targetId) {
+        // Toggle Sections
+        sections.forEach(sec => {
+            if (sec.id === targetId) {
+                sec.classList.remove('hidden-section');
+                sec.classList.add('active-section');
+            } else {
+                sec.classList.add('hidden-section');
+                sec.classList.remove('active-section');
+            }
+        });
 
-        // Update Active Link
+        // Toggle Nav Links
         navLinks.forEach(link => {
-            const linkTarget = link.getAttribute('data-target');
-            if (linkTarget === targetId) {
+            if (link.dataset.target === targetId) {
                 link.classList.add('active');
             } else {
                 link.classList.remove('active');
             }
         });
-
-        // Switch Section
-        sections.forEach(section => {
-            section.classList.remove('active-section');
-            if (section.id === targetId) {
-                section.classList.add('active-section');
-            }
-        });
     }
-
-    function handleHashChange() {
-        const hash = window.location.hash.substring(1); // Remove '#'
-        if (hash) {
-            switchView(hash);
-        } else {
-            // Default view
-            switchView('converter-section');
-        }
-    }
-
-    // Event Listeners
-    window.addEventListener('hashchange', handleHashChange);
-
-    // Initial Load
-    handleHashChange();
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            const targetId = link.getAttribute('data-target');
-            // If it's a real link with data-target, update hash
-            if (targetId) {
-                e.preventDefault();
-                window.location.hash = targetId;
-            }
-            // For placeholder links without data-target, default behavior (href="#") or preventDefault
+            e.preventDefault();
+            switchSection(link.dataset.target);
         });
     });
 
-    // --- Converter Logic (Original) ---
-    // DOM Elements
+
+    // --- Image Converter Logic ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const selectFileBtn = document.getElementById('select-file-btn');
-    const addMoreBtn = document.getElementById('add-more-btn');
     const editorArea = document.getElementById('editor-area');
     const fileListContainer = document.getElementById('file-list');
     const fileCountSpan = document.getElementById('file-count');
     const formatSelect = document.getElementById('format-select');
     const convertBtn = document.getElementById('convert-btn');
     const resetBtn = document.getElementById('reset-btn');
+    const addMoreBtn = document.getElementById('add-more-btn');
 
-    // State
     let fileQueue = [];
 
-    // Event Listeners for Drag & Drop
+    // Drag & Drop Events
     setupDragAndDrop(dropZone, (files) => handleFiles(files));
 
     // File Input Events
@@ -79,19 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
     addMoreBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFiles(e.target.files);
-        }
-        fileInput.value = '';
+        if (e.target.files.length > 0) handleFiles(e.target.files);
+        fileInput.value = ''; // Reset for same file selection
     });
 
-    // Reset Event
+    // Reset Button
     resetBtn.addEventListener('click', resetUI);
 
-    // Convert Event
+    // Convert Button
     convertBtn.addEventListener('click', convertAndDownload);
 
-    // Functions
     function handleFiles(files) {
         const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
 
@@ -103,19 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
         newFiles.forEach(file => {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const fileObj = {
+                fileQueue.push({
                     id: Date.now() + Math.random(),
                     file: file,
-                    preview: e.target.result,
-                    name: file.name
-                };
-                fileQueue.push(fileObj);
+                    name: file.name,
+                    preview: e.target.result
+                });
                 renderFileList();
             };
             reader.readAsDataURL(file);
         });
 
-        showEditor();
+        dropZone.classList.add('hidden');
+        editorArea.classList.remove('hidden');
     }
 
     function renderFileList() {
@@ -133,12 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.createElement('div');
             name.className = 'file-name';
             name.textContent = item.name;
-            name.title = item.name;
+            name.title = item.name; // Tooltip
 
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-file-btn';
             removeBtn.innerHTML = '×';
-            removeBtn.title = '削除';
             removeBtn.onclick = () => removeFile(item.id);
 
             fileItem.appendChild(img);
@@ -148,18 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
             fileListContainer.appendChild(fileItem);
         });
 
-        updateConvertButtonText();
-
-        if (fileQueue.length === 0) {
-            resetUI();
-        }
-    }
-
-    function updateConvertButtonText() {
+        // Update Convert Button Text
         if (fileQueue.length > 1) {
             convertBtn.textContent = '一括変換してZIPでダウンロード';
         } else {
             convertBtn.textContent = '変換してダウンロード';
+        }
+
+        if (fileQueue.length === 0) {
+            resetUI();
         }
     }
 
@@ -168,17 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderFileList();
     }
 
-    function showEditor() {
-        dropZone.classList.add('hidden');
-        editorArea.classList.remove('hidden');
-    }
-
     function resetUI() {
         fileQueue = [];
         fileListContainer.innerHTML = '';
         fileCountSpan.textContent = '(0)';
-        updateConvertButtonText();
-
+        convertBtn.textContent = '変換してダウンロード';
         editorArea.classList.add('hidden');
         dropZone.classList.remove('hidden');
     }
@@ -187,73 +150,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fileQueue.length === 0) return;
 
         const format = formatSelect.value;
-        let extension;
-        if (format === 'image/jpeg') extension = 'jpg';
-        else if (format === 'image/png') extension = 'png';
-        else if (format === 'image/webp') extension = 'webp';
-        else if (format === 'image/bmp') extension = 'bmp';
-        else if (format === 'application/pdf') extension = 'pdf';
-        else extension = 'bin';
-
-        const originalBtnText = convertBtn.textContent;
+        const btnOriginalText = convertBtn.textContent;
         convertBtn.textContent = '変換中...';
         convertBtn.disabled = true;
 
         try {
-            const conversionPromises = fileQueue.map(item => processFile(item, format, extension));
-            const results = await Promise.all(conversionPromises);
+            const promises = fileQueue.map(item => processImage(item, format));
+            const results = await Promise.all(promises);
 
             if (results.length === 1) {
-                const result = results[0];
-                downloadBlob(result.blob, result.name);
+                // Single file download
+                downloadBlob(results[0].blob, results[0].name);
             } else {
+                // Zip download
                 const zip = new JSZip();
                 results.forEach(result => {
                     zip.file(result.name, result.blob);
                 });
-
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
                 downloadBlob(zipBlob, 'images_converted.zip');
             }
 
         } catch (error) {
             console.error(error);
-            alert('変換中にエラーが発生しました。');
+            alert('変換中にエラーが発生しました');
         } finally {
-            convertBtn.textContent = originalBtnText;
+            convertBtn.textContent = btnOriginalText;
             convertBtn.disabled = false;
         }
     }
 
-    function processFile(item, format, extension) {
+    function processImage(item, format) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
-                const nameWithoutExt = item.name.substring(0, item.name.lastIndexOf('.')) || item.name;
-                const fileName = `${nameWithoutExt}.${extension}`;
-
-                if (format === 'application/pdf') {
-                    try {
-                        const { jsPDF } = window.jspdf;
-                        const pdf = new jsPDF({
-                            orientation: img.naturalWidth > img.naturalHeight ? 'l' : 'p',
-                            unit: 'px',
-                            format: [img.naturalWidth, img.naturalHeight]
-                        });
-                        pdf.addImage(img, 'JPEG', 0, 0, img.naturalWidth, img.naturalHeight);
-                        const pdfBlob = pdf.output('blob');
-                        resolve({ name: fileName, blob: pdfBlob });
-                    } catch (e) {
-                        reject(e);
-                    }
-                    return;
-                }
-
                 const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
 
+                // For JPEG/BMP, fill white background (transparent becomes black otherwise)
                 if (format === 'image/jpeg' || format === 'image/bmp') {
                     ctx.fillStyle = '#FFFFFF';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -261,46 +197,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 ctx.drawImage(img, 0, 0);
 
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        resolve({ name: fileName, blob: blob });
-                    } else {
-                        reject('Conversion failed');
+                if (format === 'application/pdf') {
+                    // PDF Conversion
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        // Orient based on dimensions
+                        const orientation = img.width > img.height ? 'l' : 'p';
+                        const pdf = new jsPDF({
+                            orientation: orientation,
+                            unit: 'px',
+                            format: [img.width, img.height]
+                        });
+                        pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, img.width, img.height);
+                        const pdfBlob = pdf.output('blob');
+                        const nameWithoutExt = item.name.substring(0, item.name.lastIndexOf('.')) || item.name;
+                        resolve({ name: `${nameWithoutExt}.pdf`, blob: pdfBlob });
+                    } catch (e) {
+                        reject(e);
                     }
-                }, format, 0.9);
+                } else {
+                    // Image Conversion
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const nameWithoutExt = item.name.substring(0, item.name.lastIndexOf('.')) || item.name;
+                            // mapping format to extension
+                            let ext = 'png';
+                            if (format === 'image/jpeg') ext = 'jpg';
+                            if (format === 'image/webp') ext = 'webp';
+                            if (format === 'image/bmp') ext = 'bmp';
+
+                            resolve({ name: `${nameWithoutExt}.${ext}`, blob: blob });
+                        } else {
+                            reject('Conversion failed');
+                        }
+                    }, format, 0.9);
+                }
             };
             img.onerror = reject;
             img.src = item.preview;
         });
     }
 
-    // --- Resizer Logic ---
+    // --- Image Resizer Logic ---
     const resizeDropZone = document.getElementById('resize-drop-zone');
     const resizeFileInput = document.getElementById('resize-file-input');
     const resizeSelectFileBtn = document.getElementById('resize-select-file-btn');
+    const resizeAddMoreBtn = document.getElementById('resize-add-more-btn');
     const resizeEditorArea = document.getElementById('resize-editor-area');
-
-    // File List Elements
     const resizeFileListContainer = document.getElementById('resize-file-list');
     const resizeFileCountSpan = document.getElementById('resize-file-count');
-    const resizeAddMoreBtn = document.getElementById('resize-add-more-btn');
+    const doResizeBtn = document.getElementById('do-resize-btn');
+    const resizeResetBtn = document.getElementById('resize-reset-btn');
 
     // Controls
+    const pixelInputs = document.getElementById('pixel-inputs');
+    const percentageInputs = document.getElementById('percentage-inputs');
     const widthInput = document.getElementById('resize-width');
     const heightInput = document.getElementById('resize-height');
     const lockAspectRatioCheckbox = document.getElementById('lock-aspect-ratio');
-
-    // Percentage Controls
     const percentageInput = document.getElementById('resize-percentage');
     const percentageSlider = document.getElementById('resize-percentage-slider');
-
-    // Mode Switcher
     const modeTabs = document.querySelectorAll('.mode-tab');
-    const pixelInputs = document.getElementById('pixel-inputs');
-    const percentageInputs = document.getElementById('percentage-inputs');
-
-    const doResizeBtn = document.getElementById('do-resize-btn');
-    const resizeResetBtn = document.getElementById('resize-reset-btn');
 
     let resizeQueue = [];
     let currentResizeMode = 'pixel'; // 'pixel' or 'percentage'
@@ -872,7 +829,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoConvertBtn = document.getElementById('video-convert-btn');
     const videoResetBtn = document.getElementById('video-reset-btn');
 
+    // Progress Bar Elements
+    const videoProgressContainer = document.getElementById('video-progress-container');
+    const videoProgressBar = document.getElementById('video-progress-bar');
+    const videoProgressText = document.getElementById('video-progress-text');
+    const videoFileProgress = document.getElementById('video-file-progress');
+
     let videoQueue = [];
+    let videoWorker = null;
 
     // Drag & Drop
     setupDragAndDrop(videoDropZone, (files) => handleVideoFiles(files));
@@ -891,6 +855,177 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Convert
     videoConvertBtn.addEventListener('click', convertVideoAndDownload);
+
+    // --- Worker Code for Blob Inlining ---
+    // Note: 'importScripts' is removed here because we will inject the library code manually
+    const workerLogicCode = `
+const { createFFmpeg, fetchFile } = FFmpeg;
+let ffmpeg = null;
+
+// Parse time string (HH:MM:SS.ms) to seconds
+function parseTime(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':');
+    let seconds = 0;
+    let multiplier = 1;
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+        seconds += parseFloat(parts[i]) * multiplier;
+        multiplier *= 60;
+    }
+    return seconds;
+}
+
+self.onmessage = async (e) => {
+    const { type, data } = e.data;
+
+    if (type === 'load') {
+        try {
+            if (!ffmpeg) {
+                ffmpeg = createFFmpeg({
+                    log: true,
+                    corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+                    mainName: 'main',
+                    logger: ({ message }) => { }
+                });
+            }
+            if (!ffmpeg.isLoaded()) {
+                await ffmpeg.load();
+            }
+            self.postMessage({ type: 'loaded' });
+        } catch (error) {
+            self.postMessage({ type: 'error', error: error.message });
+        }
+    } else if (type === 'convert') {
+        const { file, fileName, format, id } = data;
+        try {
+            if (!ffmpeg || !ffmpeg.isLoaded()) {
+                 if(!ffmpeg) {
+                    ffmpeg = createFFmpeg({
+                        log: true,
+                        corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+                        mainName: 'main'
+                    });
+                 }
+                 await ffmpeg.load();
+            }
+
+            let duration = 0;
+
+            ffmpeg.setLogger(({ message }) => {
+                if (message.includes('Duration:')) {
+                    const durationMatch = message.match(/Duration:\\s*(\\d+:\\d+:\\d+\\.\\d+)/);
+                    if (durationMatch && durationMatch[1]) {
+                        duration = parseTime(durationMatch[1]);
+                    }
+                }
+
+                if (message.includes('time=')) {
+                    const timeMatch = message.match(/time=\\s*(\\S+)/);
+                    if (timeMatch && timeMatch[1]) {
+                        const timeStr = timeMatch[1];
+                        const currentTime = parseTime(timeStr);
+                        
+                        if (duration > 0) {
+                            const ratio = Math.min(currentTime / duration, 1);
+                            self.postMessage({ 
+                                type: 'progress', 
+                                data: { id, ratio, percent: Math.round(ratio * 100) } 
+                            });
+                        }
+                    }
+                }
+            });
+
+            const ext = fileName.split('.').pop();
+            const safeInputName = \`input.\${ext}\`;
+            const outputName = \`output.\${format}\`;
+
+            ffmpeg.FS('writeFile', safeInputName, await fetchFile(file));
+
+            try {
+                await ffmpeg.run('-i', safeInputName, outputName);
+            } catch (e) {
+                if (e.message && e.message.includes('exit(0)')) {
+                    // Expected exit(0) - ignore
+                } else {
+                    throw e;
+                }
+            }
+
+            const resultData = ffmpeg.FS('readFile', outputName);
+
+            try {
+                ffmpeg.FS('unlink', safeInputName);
+                ffmpeg.FS('unlink', outputName);
+            } catch (cleanupErr) { }
+
+            const blob = new Blob([resultData.buffer], { type: \`video/\${format}\` });
+    
+            const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+            const resultName = \`\${nameWithoutExt}.\${format}\`;
+
+            self.postMessage({
+                type: 'done',
+                data: { id, blob, name: resultName }
+            });
+
+            ffmpeg.setLogger(() => {});
+
+            // Force cleanup to avoid "already running" errors
+            try {
+               if (ffmpeg) ffmpeg.exit();
+            } catch (e) {}
+            ffmpeg = null;
+
+        } catch (error) {
+            // Even on error, try to cleanup
+            try {
+               if (ffmpeg) ffmpeg.exit();
+            } catch (e) {}
+            ffmpeg = null;
+            
+            self.postMessage({ type: 'error', error: error.message });
+        }
+    }
+};
+`;
+
+    let videoWorkerLoadingPromise = null;
+
+    async function initVideoWorker() {
+        if (videoWorker) return;
+        if (videoWorkerLoadingPromise) return videoWorkerLoadingPromise;
+
+        videoWorkerLoadingPromise = (async () => {
+            try {
+                // Fetch FFmpeg library from main thread to bypass Blob Worker restrictions
+                const response = await fetch('https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js');
+                if (!response.ok) throw new Error('Failed to load FFmpeg library');
+                const ffmpegLib = await response.text();
+
+                const combinedCode = 'const document = { baseURI: self.location.href };\n' + ffmpegLib + '\n' + workerLogicCode;
+                const blob = new Blob([combinedCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+
+                videoWorker = new Worker(workerUrl);
+                videoWorker.addEventListener('message', handleWorkerMessage);
+                videoWorker.postMessage({ type: 'load' }); // Preload FFmpeg
+            } catch (e) {
+                console.error(e);
+                alert('変換エンジンの準備に失敗しました: ' + e.message);
+                videoConvertBtn.disabled = false;
+                videoConvertBtn.textContent = '変換してダウンロード';
+                throw e;
+            }
+        })();
+
+        try {
+            await videoWorkerLoadingPromise;
+        } finally {
+            videoWorkerLoadingPromise = null;
+        }
+    }
 
     function handleVideoFiles(files) {
         const newFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
@@ -911,6 +1046,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderVideoFileList();
         showVideoEditor();
+
+        // Start init worker when files are added (no await needed here as preloading)
+        initVideoWorker().catch(console.error);
     }
 
     function renderVideoFileList() {
@@ -978,91 +1116,116 @@ document.addEventListener('DOMContentLoaded', () => {
         updateVideoConvertButtonText();
         videoEditorArea.classList.add('hidden');
         videoDropZone.classList.remove('hidden');
+        videoProgressContainer.classList.add('hidden');
+
+        // Terminate worker to free memory? Or keep it?
+        // videoWorker.terminate(); videoWorker = null; // Maybe keep it for better UX next time
     }
 
+    // -- Conversion Execution State --
+    let videoResults = [];
+    let currentVideoIdx = 0;
+    let isVideoConverting = false;
+
     async function convertVideoAndDownload() {
-        if (videoQueue.length === 0) return;
+        if (videoQueue.length === 0 || isVideoConverting) return;
+
+        try {
+            await initVideoWorker();
+        } catch (e) {
+            return; // Already handled in initVideoWorker
+        }
+        isVideoConverting = true;
+        videoResults = [];
+        currentVideoIdx = 0;
 
         const format = videoFormatSelect.value;
         const btnOriginalText = videoConvertBtn.textContent;
         videoConvertBtn.textContent = '初期化中...';
         videoConvertBtn.disabled = true;
 
+        // Reset & Show Progress
+        videoProgressBar.style.width = '0%';
+        videoProgressText.textContent = '準備中...';
+        videoFileProgress.textContent = `0/${videoQueue.length}`;
+        videoProgressContainer.classList.remove('hidden');
+
+        // Start first item
+        processNextVideoItem(format);
+    }
+
+    function processNextVideoItem(format) {
+        if (currentVideoIdx >= videoQueue.length) {
+            // All done
+            finishVideoConversion();
+            return;
+        }
+
+        const item = videoQueue[currentVideoIdx];
+        videoFileProgress.textContent = `${currentVideoIdx + 1}/${videoQueue.length}`;
+        videoProgressText.textContent = `変換中... (${item.name})`;
+        videoProgressBar.style.width = '0%';
+
+        videoWorker.postMessage({
+            type: 'convert',
+            data: {
+                id: item.id,
+                file: item.file,
+                fileName: item.name,
+                format: format
+            }
+        });
+    }
+
+    function handleWorkerMessage(e) {
+        const { type, data, error } = e.data;
+        const format = videoFormatSelect.value;
+
+        if (type === 'loaded') {
+            console.log('Video Worker Loaded');
+        } else if (type === 'progress') {
+            const { percent, ratio } = data;
+            videoProgressBar.style.width = `${percent}%`;
+            const item = videoQueue[currentVideoIdx];
+            videoProgressText.textContent = `変換中... ${percent}% (${item ? item.name : ''})`;
+
+        } else if (type === 'done') {
+            videoResults.push(data);
+            currentVideoIdx++;
+            processNextVideoItem(format);
+
+        } else if (type === 'error') {
+            console.error('Worker Error:', error);
+            alert('変換エラー: ' + error);
+            isVideoConverting = false;
+            videoConvertBtn.disabled = false;
+            videoConvertBtn.textContent = '変換してダウンロード'; // Reset text
+            videoProgressContainer.classList.add('hidden');
+        }
+    }
+
+    async function finishVideoConversion() {
+        videoProgressText.textContent = '変換完了！';
+        videoProgressBar.style.width = '100%';
+
         try {
-            if (!ffmpeg) {
-                await loadFFmpeg();
-            }
-
-            videoConvertBtn.textContent = '変換中 (時間がかかります)...';
-
-            const results = [];
-
-            for (const item of videoQueue) {
-                if (!ffmpeg || !ffmpeg.isLoaded()) {
-                    await loadFFmpeg();
-                }
-
-                const result = await processVideoItem(item, format);
-                results.push(result);
-
-                try {
-                    ffmpeg.exit();
-                } catch (e) { }
-                ffmpeg = null;
-            }
-
-            if (results.length === 1) {
-                downloadBlob(results[0].blob, results[0].name);
+            if (videoResults.length === 1) {
+                downloadBlob(videoResults[0].blob, videoResults[0].name);
             } else {
                 const zip = new JSZip();
-                results.forEach(result => {
+                videoResults.forEach(result => {
                     zip.file(result.name, result.blob);
                 });
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
                 downloadBlob(zipBlob, 'videos_converted.zip');
             }
-
-        } catch (error) {
-            console.error(error);
-            if (ffmpeg && !ffmpeg.isLoaded()) {
-                ffmpeg = null;
-            }
-            alert('変換中にエラーが発生しました。コンソールログを確認してください。\n' + error.message);
-        } finally {
-            videoConvertBtn.textContent = btnOriginalText;
-            videoConvertBtn.disabled = false;
+        } catch (e) {
+            console.error(e);
+            alert('ダウンロード処理中にエラーが発生しました');
         }
-    }
 
-    async function processVideoItem(item, format) {
-        const { fetchFile } = FFmpeg;
-        const name = item.name;
-
-        const ext = name.split('.').pop();
-        const safeInputName = `input.${ext}`;
-        const outputName = `output.${format}`;
-
-        ffmpeg.FS('writeFile', safeInputName, await fetchFile(item.file));
-
-        // For GIF, we might want custom flags, but keeping it simple for now
-        await ffmpeg.run('-i', safeInputName, outputName);
-
-        const data = ffmpeg.FS('readFile', outputName);
-
-        try {
-            ffmpeg.FS('unlink', safeInputName);
-            ffmpeg.FS('unlink', outputName);
-        } catch (e) { }
-
-        let mimeType = `video/${format}`;
-        if (format === 'gif') mimeType = 'image/gif';
-
-        const blob = new Blob([data.buffer], { type: mimeType });
-        const nameWithoutExt = name.substring(0, name.lastIndexOf('.')) || name;
-
-        return {
-            name: `${nameWithoutExt}.${format}`,
-            blob: blob
-        };
+        isVideoConverting = false;
+        videoConvertBtn.disabled = false;
+        updateVideoConvertButtonText();
     }
 });
