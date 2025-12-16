@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Format Converter - Simple & Privacy Focused</title>
+    <title>File Converter - Simple & Privacy Focused</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="#" class="nav-logo">Format Converter</a>
+            <a href="#home-section" class="nav-logo" data-target="home-section">File Converter</a>
             <ul class="nav-menu">
                 <li><a href="#" class="nav-link active" data-target="converter-section">画像変換</a></li>
                 <li><a href="#" class="nav-link" data-target="resizer-section">画像リサイズ</a></li>
@@ -30,8 +30,60 @@
     </div>
 
     <main class="container">
+        <!-- Home Section -->
+        <section id="home-section" class="active-section">
+            <div class="home-hero">
+                <h1 class="hero-title">あらゆるファイルを、<br>瞬時に変換。</h1>
+                <p class="hero-subtitle">登録不要、インストール不要。<br>ブラウザだけで完結する、最も安全なファイル変換ツール。</p>
+                <div class="hero-actions">
+                    <a href="#" id="start-now-btn" class="btn primary-btn large-btn">今すぐ始める</a>
+                </div>
+            </div>
+
+            <div class="benefits-section">
+                <div class="benefit-item">
+                    <div class="benefit-icon">🔒</div>
+                    <h3>プライバシー重視</h3>
+                    <p>ファイルはサーバーにアップロードされず、全てお使いのブラウザ内で安全に処理されます。</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">⚡️</div>
+                    <h3>超高速処理</h3>
+                    <p>アップロードの待ち時間なし。WebAssembly技術により、ネイティブアプリ並みの速度を実現。</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✨</div>
+                    <h3>モダンなデザイン</h3>
+                    <p>直感的で使いやすいインターフェース。ドラッグ＆ドロップで簡単に操作できます。</p>
+                </div>
+            </div>
+
+            <div id="features" class="features-grid">
+                <div class="feature-card" data-target="converter-section">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>画像変換</h3>
+                    <p>PNG, JPG, WEBP, PDFなど、主要な画像フォーマット間の相互変換に対応。</p>
+                </div>
+                <div class="feature-card" data-target="resizer-section">
+                    <div class="feature-icon">📏</div>
+                    <h3>画像リサイズ</h3>
+                    <p>画質を維持したまま、ピクセル指定やパーセンテージで画像をリサイズ。</p>
+                </div>
+                <div class="feature-card" data-target="audio-converter-section">
+                    <div class="feature-icon">🎵</div>
+                    <h3>音楽変換</h3>
+                    <p>MP3, WAV, AACなど。音楽ファイルを好みの形式に素早く変換。</p>
+                </div>
+                <div class="feature-card" data-target="video-converter-section">
+                    <div class="feature-icon">🎬</div>
+                    <h3>動画変換</h3>
+                    <p>MP4, WEBM, GIFなど。動画ファイルのフォーマット変換もブラウザだけで。</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Converter Section -->
-        <section id="converter-section" class="active-section">
+        <section id="converter-section" class="hidden-section">
             <header class="header">
                 <h1>Image Converter</h1>
                 <p>ブラウザだけで完結。安全・高速な画像変換ツール。</p>

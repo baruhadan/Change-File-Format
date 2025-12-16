@@ -25,12 +25,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function updateSectionFromHash() {
+        const hash = window.location.hash.slice(1); // Remove '#'
+        let targetId = 'home-section'; // Default to Home
+
+        if (hash) {
+            const isValidSection = Array.from(sections).some(sec => sec.id === hash);
+            if (isValidSection) {
+                targetId = hash;
+            }
+        }
+
+        switchSection(targetId);
+    }
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            switchSection(link.dataset.target);
+            const targetId = link.dataset.target;
+            window.location.hash = targetId;
         });
     });
+
+    // Handle Hero Buttons and Feature Cards
+    const startNowBtn = document.getElementById('start-now-btn');
+    if (startNowBtn) {
+        startNowBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const featuresSection = document.getElementById('features');
+            if (featuresSection) {
+                featuresSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+
+    const internalLinks = document.querySelectorAll('[data-target]');
+    internalLinks.forEach(link => {
+        if (!link.classList.contains('nav-link')) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                // If it's the logo, check if we are already home
+                const targetId = link.dataset.target;
+                window.location.hash = targetId;
+            });
+        }
+    });
+
+    // Handle back/forward buttons
+    window.addEventListener('hashchange', updateSectionFromHash);
+
+    // Initial load
+    updateSectionFromHash();
 
 
     // --- Image Converter Logic ---
