@@ -64,9 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!link.classList.contains('nav-link')) {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                // If it's the logo, check if we are already home
                 const targetId = link.dataset.target;
                 window.location.hash = targetId;
+
+                // If it's the home section (Logo), scroll to top instantly
+                if (targetId === 'home-section') {
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                }
             });
         }
     });
