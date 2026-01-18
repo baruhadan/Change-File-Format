@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://black-ground-0d0873800.1.azurestaticapps.net/sitemap.xml
